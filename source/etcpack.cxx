@@ -52,6 +52,7 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include "image.h"
+#include <chrono>
 
 // Typedefs
 typedef unsigned char uint8;
@@ -461,7 +462,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	// Delete temp file if it exists.
 	if(fileExist("tmp.ppm"))
 	{
-		sprintf(str, "del tmp.ppm\n");
+		sprintf(str, "rm tmp.ppm\n");
 		system(str);
 	}
 
@@ -469,7 +470,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	if(!strcmp(&filename[q],".ppm")) 
 	{
 		// Already a .ppm file. Just copy. 
-		sprintf(str,"copy %s tmp.ppm \n", filename);
+		sprintf(str,"cp %s tmp.ppm \n", filename);
 		printf("Copying source file to tmp.ppm\n", filename);
 	}
 	else
@@ -495,7 +496,7 @@ bool readSrcFile(char *filename,uint8 *&img,int &width,int &height, int &expande
 	{
 		width=w1;
 		height=h1;
-		system("del tmp.ppm");
+		system("rm tmp.ppm");
 
 		// Width must be divisible by 4 and height must be
 		// divisible by 4. Otherwise, we will expand the image
@@ -559,7 +560,7 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 	// Delete temp file if it exists.
 	if(fileExist("tmp.ppm"))
 	{
-		sprintf(str, "del tmp.ppm\n");
+		sprintf(str, "rm tmp.ppm\n");
 		system(str);
 	}
 
@@ -568,7 +569,7 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 	if(!strcmp(&filename[q],".ppm")) 
 	{
 		// Already a .ppm file. Just copy. 
-		sprintf(str,"copy %s tmp.ppm \n", filename);
+		sprintf(str,"cp %s tmp.ppm \n", filename);
 		printf("Copying source file to tmp.ppm\n", filename);
 	}
 	else
@@ -591,7 +592,7 @@ bool readSrcFileNoExpand(char *filename,uint8 *&img,int &width,int &height)
 	{
 		width=w1;
 		height=h1;
-		system("del tmp.ppm");
+		system("rm tmp.ppm");
 
 		return true;
 	}
@@ -9472,7 +9473,7 @@ void writeOutputFile(char *dstfile, uint8* img, uint8* alphaimg, int width, int 
 	// Delete destination file if it exists
 	if(fileExist(dstfile))
 	{
-		sprintf(str, "del %s\n",dstfile);	
+		sprintf(str, "rm %s\n",dstfile);
 		system(str);
 	}
 
@@ -15882,10 +15883,7 @@ void compressFile(char *srcfile,char *dstfile)
 	uint8 *srcimg;
 	int width,height;
 	int extendedwidth, extendedheight;
-	struct _timeb tstruct;
-	int tstart;
-	int tstop;
-	// 0: compress from .any to .pkm with SPEED_FAST, METRIC_NONPERCEPTUAL, ETC 
+	// 0: compress from .any to .pkm with SPEED_FAST, METRIC_NONPERCEPTUAL, ETC
 	// 1: compress from .any to .pkm with SPEED_MEDIUM, METRIC_NONPERCEPTUAL, ETC
 	// 2: compress from .any to .pkm with SPEED_SLOW, METRIC_NONPERCEPTUAL, ETC
 	// 3: compress from .any to .pkm with SPEED_FAST, METRIC_PERCEPTUAL, ETC
@@ -15959,13 +15957,11 @@ void compressFile(char *srcfile,char *dstfile)
 			}
 			printf("Compressing...\n");
 
-			tstart=time(NULL);
-			_ftime( &tstruct );
-			tstart=tstart*1000+tstruct.millitm;
+			auto tstart = std::chrono::high_resolution_clock::now();
 			compressImageFile(srcimg,alphaimg,width,height,dstfile,extendedwidth, extendedheight);			
-			tstop = time(NULL);
-			_ftime( &tstruct );
-			tstop = tstop*1000+tstruct.millitm;
+			auto tstop = std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(tstop - tstart).count();
+			printf("It took %lld milliseconds to compress:\n", duration);
 			printf( "It took %u milliseconds to compress:\n", tstop - tstart);
 			calculatePSNRfile(dstfile,srcimg,alphaimg);
 		}
